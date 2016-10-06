@@ -115,10 +115,10 @@ list of feature return types follows:
  - `real%`
  - `mixed%`
 
-Feature return types ending with square brackets indicate that an array of features is produced
+Feature return types ending with square brackets (`[]`) indicate that an array of features is produced
 by this classifier. The user can expect the feature at a given index of the array to be the
 same feature with a differing value each time the classifier is called on a different input object.
-Feature return types ending with a percent sign indicate that this classifier is a feature generator.
+Feature return types ending with a percent sign (`%`) indicate that this classifier is a feature generator.
 A feature generator may return zero or more features in any order when it is called, and there
 is no guarantee that the same features will be produced when called on different input objects.
 Finally, the `mixed%` feature return type indicates that the classifier is a generator of both discrete
