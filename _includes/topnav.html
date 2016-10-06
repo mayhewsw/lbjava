@@ -1,70 +1,60 @@
 <!-- Navigation -->
-<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+<nav class="navbar navbar-light bg-faded navbar-fixed-top" role="navigation">
     <div class="container topnavlinks">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
 
-            <a class="navbar-brand" href="{{ base }}/index.html">
-                <img src="{{ base }}/common_images/logo.png" style="height:20px; width:20px" />
+        <a class="navbar-brand" href="{{ base }}/index.html">
+            <img src="{{ base }}/common_images/logo.png" style="height:30px; width:30px" />
+        </a>
 
-            </a>
+        <a class="navbar-brand" href="{{ base }}/index.html">
+            {{site.topnav_title}}
+        </a>
 
-            <a class="navbar-brand" href="{{ base }}/index.html">
-                {{site.topnav_title}}
-            </a>
-        </div>
+        <ul class="nav navbar-nav hidden-md-up">
 
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            {% for entry in sidebar %}
+            {% for subcategory in entry.subcategories %}
 
-            <ul class="nav navbar-nav visible-xs-block visible-sm-block">
+                <!--need a separate structure for external links.-->
+                {% if subcategory.url != nil %}
+                    <li class="nav-item"><a  class="nav-link" href="{{ subcategory.url }}" target="_blank">{{ subcategory.title }}</a></li>
+                {% else %}
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle">{{ subcategory.title }}</a>
+                        <ul class="dropdown-menu">
+                            {% for item in subcategory.items %}
+                                <li class="dropdown-item"><a href="{{ item.url | prepend: site.github.url }}">{{item.title}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endif %}
 
-                {% for entry in sidebar %}
+            {% endfor %}
+            {% endfor %}
+
+        </ul>
+
+        <ul class="nav navbar-nav pull-xs-right">
+
+            {% for entry in topnav %}
                 {% for subcategory in entry.subcategories %}
-
-                    <!--need a separate structure for external links.-->
-                    {% if subcategory.url != nil %}
-                        <li><a href="{{ subcategory.url }}" target="_blank">{{ subcategory.title }}</a></li>
-                    {% else %}
-                        <li class="dropdown">
-                            <a href="#" data-toggle="dropdown" class="dropdown-toggle">{{ subcategory.title }}</a>
-                            <ul class="dropdown-menu">
-                                {% for item in subcategory.items %}
-                                    <li><a href="{{ item.url | prepend: site.github.url }}">{{item.title}}</a></li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endif %}
-
+                        {% if subcategory.external_url %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{subcategory.external_url}}" target="_blank">
+                                {% if subcategory.icon != nil %}
+                                <img height="20" width="20" src="{{ subcategory.icon | prepend: site.github.url }}" />
+                                {% endif %}
+                                {{subcategory.title}}</a></li>
+                        {% elsif page.url == subcategory.url %}
+                            <li class="nav-item active"><a class="nav-link" href="{{subcategory.url | prepend: site.github.url}}">{{subcategory.title}}</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{{subcategory.url | prepend: site.github.url }}">{{subcategory.title}}</a></li>
+                        {% endif %}
                 {% endfor %}
-                {% endfor %}
+            {% endfor %}
 
-            </ul>
+         </ul>
 
-            <ul class="nav navbar-nav navbar-right">
-
-                {% for entry in topnav %}
-                    {% for subcategory in entry.subcategories %}
-                            {% if subcategory.external_url %}
-                                <li><a href="{{subcategory.external_url}}" target="_blank">
-                                    {% if subcategory.icon != nil %}
-                                    <img height="20" width="20" src="{{ subcategory.icon | prepend: site.github.url }}" />
-                                    {% endif %}
-                                    {{subcategory.title}}</a></li>
-                            {% elsif page.url == subcategory.url %}
-                                <li class="active"><a href="{{subcategory.url | prepend: site.github.url}}">{{subcategory.title}}</a></li>
-                            {% else %}
-                                <li><a href="{{subcategory.url | prepend: site.github.url }}">{{subcategory.title}}</a></li>
-                            {% endif %}
-                    {% endfor %}
-                {% endfor %}
-
-             </ul>
-        </div>
         <!-- /.container -->
     </div>
 </nav>
