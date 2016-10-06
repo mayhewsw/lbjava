@@ -1,0 +1,10 @@
+<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#{{include.id}}" aria-expanded="false" aria-controls="collapseExample">
+        Show/hide {{include.fname}}
+</button>
+<div class="collapse" id="{{include.id}}">
+    <div class="card card-block">
+{% highlight java %}
+{% include_relative {{include.fname}} %}
+{% endhighlight %}
+    </div>
+</div>
