@@ -1,3 +1,7 @@
+---
+title: LBJava Maven Plugin
+---
+
 # lbjava-maven-plugin
 
 ## Contents:

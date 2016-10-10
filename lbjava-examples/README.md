@@ -1,3 +1,8 @@
+---
+title: LBJava examples
+---
+
+
 # LBJava examples 
 
 Here are a couple of sample classification projects which are using LBJava.
