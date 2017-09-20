@@ -7,7 +7,7 @@
     <groupId>edu.illinois.cs.cogcomp</groupId>
     <artifactId>lbjava-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.26</version>
+    <version>1.3.0</version>
 
     <modules>
         <module>lbjava</module>
@@ -33,11 +33,11 @@
         <repository>
             <id>CogcompSoftware</id>
             <name>CogcompSoftware</name>
-            <url>scp://bilbo.cs.illinois.edu:/mounts/bilbo/disks/0/www/cogcomp/html/m2repo</url>
+            <url>scp://legolas.cs.illinois.edu:/srv/data/cogcomp/html/m2repo</url>
         </repository>
         <site>
             <id>CogcompSoftwareDoc</id>
-            <url>scp://bilbo.cs.illinois.edu:/mounts/bilbo/disks/0/www/cogcomp/html/software/doc/${project.artifactId}</url>
+            <url>scp://legolas.cs.illinois.edu:/srv/data/cogcomp/html/software/doc/</url>
         </site>
     </distributionManagement>
 
