@@ -52,6 +52,7 @@ import java.util.Map;
  *
  * @author Nick Rizzolo
  **/
+@SuppressWarnings("ALL")
 public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
     /** Default for {@link LinearThresholdUnit#weightVector}. */
     public static final AveragedWeightVector defaultWeightVector = new AveragedWeightVector();
@@ -63,7 +64,6 @@ public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
     protected AveragedWeightVector awv;
     /** Keeps the extra information necessary to compute the averaged bias. */
     protected double averagedBias;
-
 
     /**
      * The learning rate and threshold take default values, while the name of the classifier gets
@@ -281,7 +281,6 @@ public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
         awv.scaledAdd(exampleFeatures, exampleValues, -rate, initialWeight);
     }
 
-
     /**
      * This method works just like {@link LinearThresholdUnit#learn(int[],double[],int[],double[])},
      * except it notifies its weight vector when it got an example correct in addition to updating
@@ -293,7 +292,7 @@ public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
      * @param labelValues The labels' values
      **/
     public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues) {
+            double[] labelValues, double weight) {
         assert exampleLabels.length == 1 : "Example must have a single label.";
         assert exampleLabels[0] == 0 || exampleLabels[0] == 1 : "Example has unallowed label value.";
 
@@ -301,9 +300,9 @@ public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
 
         double s = awv.simpleDot(exampleFeatures, exampleValues, initialWeight) + bias;
         if (label && s < threshold + positiveThickness)
-            promote(exampleFeatures, exampleValues, getLearningRate());
+            promote(exampleFeatures, exampleValues, weight*getLearningRate());
         else if (!label && s >= threshold - negativeThickness)
-            demote(exampleFeatures, exampleValues, getLearningRate());
+            demote(exampleFeatures, exampleValues, weight*getLearningRate());
         else
             awv.correctExample();
     }

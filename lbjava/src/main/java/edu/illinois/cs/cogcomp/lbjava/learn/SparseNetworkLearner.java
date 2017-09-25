@@ -262,7 +262,7 @@ public class SparseNetworkLearner extends Learner {
      * @param labelValues The labels' values.
      **/
     public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues) {
+            double[] labelValues, double weight) {
         int label = exampleLabels[0];
         int N = network.size();
 
@@ -282,7 +282,7 @@ public class SparseNetworkLearner extends Learner {
                 continue;
 
             l[0] = (i == label) ? 1 : 0;
-            ltu.learn(exampleFeatures, exampleValues, l, labelValues);
+            ltu.learn(exampleFeatures, exampleValues, l, labelValues, weight);
         }
     }
     

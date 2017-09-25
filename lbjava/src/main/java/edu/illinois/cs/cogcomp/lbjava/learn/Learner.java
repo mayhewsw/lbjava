@@ -343,6 +343,20 @@ public abstract class Learner extends Classifier {
                 (double[]) exampleArray[3]);
     }
 
+
+    /**
+     * Trains the learning algorithm given an object as an example. By default, this simply converts
+     * the example object into arrays and passes it to {@link #learn(int[],double[],int[],double[])}
+     * .
+     *
+     * @param example An example of the desired learned classifier's behavior.
+     **/
+    public void learn(Object example, double weight) {
+        Object[] exampleArray = getExampleArray(example);
+        learn((int[]) exampleArray[0], (double[]) exampleArray[1], (int[]) exampleArray[2],
+                (double[]) exampleArray[3], weight);
+    }
+
     /**
      * Trains the learning algorithm given a feature vector as an example. This simply converts the
      * example object into arrays and passes it to {@link #learn(int[],double[],int[],double[])}.
@@ -371,8 +385,22 @@ public abstract class Learner extends Classifier {
      * @param exampleLabels The example's label(s).
      * @param labelValues The values of the labels.
      **/
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                               double[] labelValues){
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues, 1.0);
+    }
+
+    /**
+     * Trains the learning algorithm given an example formatted as arrays of feature indices, their
+     * values, and the example labels.
+     *
+     * @param exampleFeatures The example's array of feature indices.
+     * @param exampleValues The example's array of feature values.
+     * @param exampleLabels The example's label(s).
+     * @param labelValues The values of the labels.
+     **/
     abstract public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues);
+                               double[] labelValues, double weight);
 
 
     /**

@@ -22,12 +22,10 @@ import java.util.zip.ZipOutputStream;
 import edu.illinois.cs.cogcomp.core.datastructures.vectors.ExceptionlessInputStream;
 import edu.illinois.cs.cogcomp.core.datastructures.vectors.ExceptionlessOutputStream;
 import edu.illinois.cs.cogcomp.core.datastructures.vectors.Sort;
-import edu.illinois.cs.cogcomp.lbjava.parse.ArrayFileParser;
-import edu.illinois.cs.cogcomp.lbjava.parse.FoldParser;
-import edu.illinois.cs.cogcomp.lbjava.parse.FoldSeparator;
-import edu.illinois.cs.cogcomp.lbjava.parse.Parser;
+import edu.illinois.cs.cogcomp.lbjava.parse.*;
 import edu.illinois.cs.cogcomp.lbjava.util.StudentT;
 import edu.illinois.cs.cogcomp.lbjava.util.TableFormat;
+import edu.illinois.cs.cogcomp.lbjava.util.WeightedObject;
 
 
 /**
@@ -35,7 +33,8 @@ import edu.illinois.cs.cogcomp.lbjava.util.TableFormat;
  *
  * @author Nick Rizzolo
  **/
-public class BatchTrainer {
+@SuppressWarnings("ALL")
+public class WeightedBatchTrainer {
     /**
      * <!-- writeExample(ExceptionlessOutputStream,int[],double[],int[],double[]) --> Writes an
      * example vector to the specified stream, with all features being written in the order they
@@ -167,79 +166,6 @@ public class BatchTrainer {
     protected int lexiconSize;
 
 
-    // Constructors.
-    /**
-     * <!-- <init>(Learner,String) --> Creates a new trainer that doesn't produce status messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     **/
-    public BatchTrainer(Learner l, String p) {
-        this(l, p, true);
-    }
-
-    /**
-     * <!-- <init>(Learner,String,int) --> Creates a new trainer that produces status messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     * @param o The number of examples in between status messages on STDOUT.
-     **/
-    public BatchTrainer(Learner l, String p, int o) {
-        this(l, p, true, o);
-    }
-
-    /**
-     * <!-- <init>(Learner,String,int,String) --> Creates a new trainer that produces status
-     * messages with the specified indentation spacing for status messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     * @param o The number of examples in between status messages on STDOUT.
-     * @param i The indentation spacing for status messages.
-     **/
-    public BatchTrainer(Learner l, String p, int o, String i) {
-        this(l, p, true, o, i);
-    }
-
-    /**
-     * <!-- <init>(Learner,String,boolean) --> Creates a new trainer that doesn't produce status
-     * messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     * @param z Whether or not the example file is compressed.
-     **/
-    public BatchTrainer(Learner l, String p, boolean z) {
-        this(l, new ArrayFileParser(p, z));
-    }
-
-    /**
-     * <!-- <init>(Learner,String,boolean,int) --> Creates a new trainer that produces status
-     * messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     * @param z Whether or not the example file is compressed.
-     * @param o The number of examples in between status messages on STDOUT.
-     **/
-    public BatchTrainer(Learner l, String p, boolean z, int o) {
-        this(l, new ArrayFileParser(p, z), o);
-    }
-
-    /**
-     * <!-- <init>(Learner,String,boolean,int,String) --> Creates a new trainer that produces status
-     * messages with the specified indentation spacing for status messages.
-     *
-     * @param l The learner to be trained.
-     * @param p The path to an example file.
-     * @param z Whether or not the example file is compressed.
-     * @param o The number of examples in between status messages on STDOUT.
-     * @param i The indentation spacing for status messages.
-     **/
-    public BatchTrainer(Learner l, String p, boolean z, int o, String i) {
-        this(l, new ArrayFileParser(p, z), o, i);
-    }
 
     /**
      * <!-- <init>(Learner,Parser) --> Creates a new trainer that doesn't produce status messages.
@@ -247,7 +173,7 @@ public class BatchTrainer {
      * @param l The learner to be trained.
      * @param p The parser from which training data is received.
      **/
-    public BatchTrainer(Learner l, Parser p) {
+    public WeightedBatchTrainer(Learner l, Parser p) {
         this(l, p, 0);
     }
 
@@ -258,7 +184,7 @@ public class BatchTrainer {
      * @param p The parser from which training data is received.
      * @param o The number of examples in between status messages on STDOUT.
      **/
-    public BatchTrainer(Learner l, Parser p, int o) {
+    public WeightedBatchTrainer(Learner l, Parser p, int o) {
         this(l, p, o, "");
     }
 
@@ -271,7 +197,7 @@ public class BatchTrainer {
      * @param o The number of examples in between status messages on STDOUT.
      * @param i The indentation spacing for status messages.
      **/
-    public BatchTrainer(Learner l, Parser p, int o, String i) {
+    public WeightedBatchTrainer(Learner l, Parser p, int o, String i) {
         learner = l;
         parser = p;
         progressOutput = o;
@@ -558,242 +484,10 @@ public class BatchTrainer {
      * {@link #learner} doesn't either have the lexicon loaded or know where to find it.
      **/
     public void fillInSizes() {
-        if (parser instanceof ArrayFileParser) {
-            ArrayFileParser afp = (ArrayFileParser) parser;
-            examples = afp.getNumExamples();
-        } else
-            examples = 0;
+        examples = 0;
         lexiconSize = learner.getPrunedLexiconSize();
     }
 
-
-    /**
-     * <!-- pruneDataset(String,Lexicon.PruningPolicy,Learner) --> Prunes the data returned by
-     * {@link #parser} according to the given policy, under the assumption that feature counts have
-     * already been compiled in the given learner's lexicon. The pruned data is written to the given
-     * file (or memory), and at the end of the method, {@link #parser} is replaced with a new parser
-     * that reads from that file (or memory). The pruned lexicon is also written to disk.
-     *
-     * <p>
-     * If <code>exampleFile</code> already exists, this method writes the examples to a temporary
-     * file, then copies the contents to the existing file after pruning completes. This is done in
-     * case the parser providing the examples to this method is reading the existing file.
-     *
-     * <p>
-     * When calling this method, it must be the case that {@link #parser} is a
-     * {@link edu.illinois.cs.cogcomp.lbjava.parse.ArrayFileParser}. This condition is easy to
-     * satisfy, since the {@link #preExtract(String,boolean,Lexicon.CountPolicy)} method will
-     * usually be called prior to this method to count the features in the dataset, and this method
-     * also replaces {@link #parser} with a
-     * {@link edu.illinois.cs.cogcomp.lbjava.parse.ArrayFileParser}.
-     *
-     * <p>
-     * It is assumed that <code>preExtractLearner</code> already knows where to write the lexicon.
-     * If it doesn't, call {@link Learner#setLexiconLocation(String)} or
-     * {@link Learner#setLexiconLocation(java.net.URL)} on that object before calling this method.
-     *
-     * <p>
-     * Calling this method is equivalent to calling
-     * {@link #pruneDataset(String,boolean,Lexicon.PruningPolicy,Learner)} with the second argument
-     * <code>true</code>.
-     *
-     * @param exampleFile The full path to a file into which examples will be written, or
-     *        <code>null</code> to extract into memory.
-     * @param policy The type of feature pruning.
-     * @param preExtractLearner A learner whose lexicon contains all the necessary feature count
-     *        information.
-     **/
-    public void pruneDataset(String exampleFile, Lexicon.PruningPolicy policy,
-                             Learner preExtractLearner) {
-        pruneDataset(exampleFile, true, policy, preExtractLearner);
-    }
-
-
-    /**
-     * <!-- pruneDataset(String,boolean,Lexicon.PruningPolicy,Learner) --> Prunes the data returned
-     * by {@link #parser} according to the given policy, under the assumption that feature counts
-     * have already been compiled in the given learner's lexicon. The pruned data is written to the
-     * given file (or memory), and at the end of the method, {@link #parser} is replaced with a new
-     * parser that reads from that file (or memory). The pruned lexicon is also written to disk.
-     *
-     * <p>
-     * If <code>exampleFile</code> already exists, this method writes the examples to a temporary
-     * file, then copies the contents to the existing file after pruning completes. This is done in
-     * case the parser providing the examples to this method is reading the existing file.
-     *
-     * <p>
-     * When calling this method, it must be the case that {@link #parser} is an
-     * {@link edu.illinois.cs.cogcomp.lbjava.parse.ArrayFileParser ArrayFileParser}. This condition
-     * is easy to satisfy, since the {@link #preExtract(String,boolean,Lexicon.CountPolicy)} method
-     * will usually be called prior to this method to count the features in the dataset, and this
-     * method also replaces {@link #parser} with an
-     * {@link edu.illinois.cs.cogcomp.lbjava.parse.ArrayFileParser ArrayFileParser}.
-     *
-     * <p>
-     * It is assumed that <code>preExtractLearner</code> already knows where to write the lexicon.
-     * If it doesn't, call {@link Learner#setLexiconLocation(String)} or
-     * {@link Learner#setLexiconLocation(java.net.URL)} on that object before calling this method.
-     *
-     * @param exampleFile The full path to a file into which examples will be written, or
-     *        <code>null</code> to extract into memory.
-     * @param zip Whether or not to compress the extracted examples.
-     * @param policy The type of feature pruning.
-     * @param preExtractLearner A learner whose lexicon contains all the necessary feature count
-     *        information.
-     **/
-    public void pruneDataset(String exampleFile, boolean zip, Lexicon.PruningPolicy policy,
-                             Learner preExtractLearner) {
-        Lexicon lexicon = preExtractLearner.getLexicon();
-
-        if (!policy.isNone() && lexicon.getCountPolicy() == Lexicon.CountPolicy.none)
-            throw new IllegalArgumentException(
-                    "LBJava ERROR: BatchTrainer.pruneDataset: Can't prune with policy '" + policy
-                            + "' if features haven't been counted.");
-        if (!(parser instanceof ArrayFileParser))
-            throw new IllegalArgumentException(
-                    "LBJava ERROR: BatchTrainer.pruneDataset can't be called unless "
-                            + "feature pre-extraction has already been performed.");
-        ArrayFileParser afp = (ArrayFileParser) parser;
-        afp.setIncludePruned(true);
-
-        int[] swapMap = lexicon.prune(policy);
-
-        // Establish an output stream for writing examples.
-        ExceptionlessOutputStream eos = null;
-        ByteArrayOutputStream baos = null;
-        File fExampleFile = null;
-        File fTempFile = null;
-        boolean copy = false;
-
-        if (exampleFile != null) {
-            fExampleFile = new File(exampleFile);
-            if (fExampleFile.exists()) {
-                int lastSlash = exampleFile.lastIndexOf(File.separatorChar);
-
-                try {
-                    if (lastSlash == -1)
-                        fTempFile = File.createTempFile("LBJ", null);
-                    else
-                        fTempFile =
-                                File.createTempFile("LBJ", null,
-                                        new File(exampleFile.substring(0, lastSlash)));
-                } catch (Exception e) {
-                    System.err
-                            .println("LBJava ERROR: BatchTrainer.preExtract: Can't create temporary "
-                                    + "file: " + e);
-                    System.exit(1);
-                }
-
-                fTempFile.deleteOnExit();
-                copy = true;
-            } else
-                fTempFile = fExampleFile;
-
-            try {
-                if (zip)
-                    eos = ExceptionlessOutputStream.openCompressedStream(fTempFile.toURI().toURL());
-                else
-                    eos = ExceptionlessOutputStream.openBufferedStream(fTempFile.toURI().toURL());
-            } catch (Exception e) {
-                System.err
-                        .println("LBJava ERROR: BatchTrainer.preExtract: Can't convert file name '"
-                                + fTempFile + "' to URL: " + e);
-                System.exit(1);
-            }
-        } else {
-            baos = new ByteArrayOutputStream(1 << 18);
-            if (zip) {
-                ZipOutputStream zos = new ZipOutputStream(baos);
-                try {
-                    zos.putNextEntry(new ZipEntry(ExceptionlessInputStream.zipEntryName));
-                } catch (Exception e) {
-                    System.err.println("ERROR: Can't create in-memory zip data:");
-                    e.printStackTrace();
-                    System.exit(1);
-                }
-                eos = new ExceptionlessOutputStream(new BufferedOutputStream(zos));
-            } else
-                eos = new ExceptionlessOutputStream(baos);
-        }
-
-        // Write examples to the output stream.
-        examples = 0;
-
-        for (Object example = afp.next(); example != null; example = afp.next()) {
-            if (progressOutput > 0 && examples % progressOutput == 0)
-                System.out.println("  " + learner.name + ", pruning: " + examples + " examples at "
-                        + new Date());
-
-            if (example == FoldSeparator.separator)
-                eos.writeInt(-1);
-            else {
-                ++examples;
-                Object[] exampleArray = (Object[]) example;
-
-                int[] featureIndexes = (int[]) exampleArray[0];
-                double[] featureValues = (double[]) exampleArray[1];
-                int[] labelIndexes = (int[]) exampleArray[2];
-                double[] labelValues = (double[]) exampleArray[3];
-
-                int unpruned = featureIndexes.length;
-                if (swapMap != null) {
-                    // First, map the old feature indexes to the new ones.
-                    for (int i = 0; i < featureIndexes.length; ++i)
-                        featureIndexes[i] = swapMap[featureIndexes[i]];
-
-                    // Second, put the pruned features at the end of the example array.
-                    while (unpruned > 0
-                            && lexicon.isPruned(featureIndexes[unpruned - 1], labelIndexes[0],
-                            policy))
-                        --unpruned;
-
-                    for (int i = unpruned - 2; i >= 0; --i)
-                        if (lexicon.isPruned(featureIndexes[i], labelIndexes[0], policy)) {
-                            int t = featureIndexes[i];
-                            featureIndexes[i] = featureIndexes[--unpruned];
-                            featureIndexes[unpruned] = t;
-
-                            double d = featureValues[i];
-                            featureValues[i] = featureValues[unpruned];
-                            featureValues[unpruned] = d;
-                        }
-                }
-
-                writeExample(eos, featureIndexes, featureValues, labelIndexes, labelValues,
-                        unpruned, lexicon);
-            }
-        }
-
-        if (progressOutput > 0)
-            System.out.println("  " + learner.name + ", pruning: " + examples + " examples at "
-                    + new Date());
-
-        parser.close();
-        eos.close();
-
-        if (copy) {
-            try {
-                FileChannel in = (new FileInputStream(fTempFile)).getChannel();
-                FileChannel out = (new FileOutputStream(fExampleFile)).getChannel();
-                in.transferTo(0, fTempFile.length(), out);
-                in.close();
-                out.close();
-            } catch (Exception e) {
-                System.err.println("LBJava ERROR: Can't copy example file:");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-
-        lexiconSize = lexicon.getCutoff();
-        preExtractLearner.saveLexicon();
-
-        // Set up a new parser to read the pre-extracted and pruned examples.
-        if (fTempFile != null)
-            parser = new ArrayFileParser(fTempFile.getPath(), zip);
-        else
-            parser = new ArrayFileParser(baos.toByteArray(), zip);
-    }
 
 
     /**
@@ -864,7 +558,7 @@ public class BatchTrainer {
             // in which we train on just part of the data. So the examples variable
             // doesn't accurately reflect how many training examples we'll see in
             // this episode of training.
-            learner.initialize(parser instanceof FoldParser ? 0 : examples, lexiconSize);
+            learner.initialize(examples, lexiconSize);
         } else
             setIsTraining(true);
 
@@ -882,9 +576,26 @@ public class BatchTrainer {
                     System.out.println(examples + " examples processed at " + new Date());
                 }
 
-                learner.learn(example);
+                // Here we expect that each example has a weight associated with it!
+                // This is a requirement of the parser.
+                // Default weight is just 1.
+                WeightedObject wexample = (WeightedObject) example;
+
+//                // SUUUUUUPER UGLY
+//                if(learner instanceof SparseNetworkLearner){
+//                    SparseNetworkLearner snl = (SparseNetworkLearner) learner;
+//                    LinearThresholdUnit bltu = snl.baseLTU;
+//
+//                    WeightedSparseAveragedPerceptron wsap = (WeightedSparseAveragedPerceptron) bltu;
+//                    wsap.setCurrWeight(wexample.getWeight());
+//                }
+
+                double weight = wexample.getWeight();
+
+                learner.learn(example, weight);
                 ++examples;
             }
+
 
             if (progressOutput > 0) {
                 System.out.print("  " + learner.name + ": " + messageIndent);
@@ -927,100 +638,100 @@ public class BatchTrainer {
      *         performance of the learner after <code>rounds[i]</code> rounds of training and
      *         <code>results[i][1]</code> is half the size of the corresponding confidence interval.
      **/
-    public double[][] crossValidation(final int[] rounds, int k,
-                                      FoldParser.SplitPolicy splitPolicy, double alpha, final TestingMetric metric,
-                                      boolean statusMessages) {
-        if (!(k > 1 || splitPolicy == FoldParser.SplitPolicy.manual))
-            throw new IllegalArgumentException(
-                    "LBJava ERROR: BatchTrainer.crossValidation: if the data splitting "
-                            + "policy is not 'Manual', the number of folds must be greater "
-                            + "than 1.");
-        if (splitPolicy == FoldParser.SplitPolicy.manual)
-            k = -1;
-        Arrays.sort(rounds);
-        final int totalRounds = rounds[rounds.length - 1];
-
-        // Status messages.
-        if (statusMessages || progressOutput > 0) {
-            System.out.print("  " + learner.name + ": " + messageIndent + "Cross Validation: ");
-            if (k != -1)
-                System.out.print("k = " + k + ", ");
-            System.out.print("Split = " + splitPolicy);
-            if (totalRounds != 1)
-                System.out.print(", Rounds = " + totalRounds);
-            System.out.println();
-        }
-
-        // Instantiate a fold parser.
-        final FoldParser foldParser;
-        // If we pre-extracted, we know how many examples there are already;
-        // otherwise FoldParser will have to compute it.
-        if (examples > 0)
-            foldParser = new FoldParser(parser, k, splitPolicy, 0, false, examples);
-        else
-            foldParser = new FoldParser(parser, k, splitPolicy, 0, false);
-        parser = foldParser;
-
-        if (splitPolicy == FoldParser.SplitPolicy.manual)
-            k = foldParser.getK();
-
-        final double[][] performances = new double[rounds.length][k];
-        Lexicon labelLexicon = learner.getLabelLexicon();
-
-        // Train and get testing performances for each fold.
-        for (int i = 0; i < k; foldParser.setPivot(++i)) {
-            if (statusMessages || progressOutput > 0)
-                System.out.println("  " + learner.name + ": " + messageIndent
-                        + "Training against subset " + i + " at " + new Date());
-            final int fold = i;
-            messageIndent += "  ";
-
-            train(totalRounds, new DoneWithRound() {
-                int r = 0;
-
-                public void doneWithRound(int round) {
-                    if (round < totalRounds && rounds[r] == round)
-                        performances[r++][fold] =
-                                crossValidationTesting(foldParser, metric, true, false);
-                }
-            });
-
-            performances[rounds.length - 1][i] =
-                    crossValidationTesting(foldParser, metric, false, statusMessages);
-            messageIndent = messageIndent.substring(2);
-
-            learner.forget();
-            if (labelLexicon != null && labelLexicon.size() > 0
-                    && learner.getLabelLexicon().size() == 0)
-                learner.setLabelLexicon(labelLexicon);
-        }
-
-        parser = foldParser.getParser();
-
-        // Compute the confidence interval.
-        double[][] results = new double[rounds.length][];
-        boolean usingAccuracy = metric instanceof Accuracy;
-
-        for (int r = 0; r < rounds.length; ++r) {
-            results[r] = StudentT.confidenceInterval(performances[r], alpha);
-
-            if (r == rounds.length - 1 && statusMessages || progressOutput > 0) {
-                double mean = Math.round(results[r][0] * 100000) / 100000.0;
-                double half = Math.round(results[r][1] * 100000) / 100000.0;
-
-                System.out.print("  " + learner.name + ":   " + messageIndent + (100 * (1 - alpha))
-                        + "% confidence interval after " + rounds[r] + " rounds: " + mean);
-                if (usingAccuracy)
-                    System.out.print("%");
-                System.out.print(" +/- " + half);
-                if (usingAccuracy)
-                    System.out.print("%");
-                System.out.println();
-            }
-        }
-
-        return results;
-    }
+//    public double[][] crossValidation(final int[] rounds, int k,
+//                                      FoldParser.SplitPolicy splitPolicy, double alpha, final TestingMetric metric,
+//                                      boolean statusMessages) {
+//        if (!(k > 1 || splitPolicy == FoldParser.SplitPolicy.manual))
+//            throw new IllegalArgumentException(
+//                    "LBJava ERROR: BatchTrainer.crossValidation: if the data splitting "
+//                            + "policy is not 'Manual', the number of folds must be greater "
+//                            + "than 1.");
+//        if (splitPolicy == FoldParser.SplitPolicy.manual)
+//            k = -1;
+//        Arrays.sort(rounds);
+//        final int totalRounds = rounds[rounds.length - 1];
+//
+//        // Status messages.
+//        if (statusMessages || progressOutput > 0) {
+//            System.out.print("  " + learner.name + ": " + messageIndent + "Cross Validation: ");
+//            if (k != -1)
+//                System.out.print("k = " + k + ", ");
+//            System.out.print("Split = " + splitPolicy);
+//            if (totalRounds != 1)
+//                System.out.print(", Rounds = " + totalRounds);
+//            System.out.println();
+//        }
+//
+//        // Instantiate a fold parser.
+//        final FoldParser foldParser;
+//        // If we pre-extracted, we know how many examples there are already;
+//        // otherwise FoldParser will have to compute it.
+//        if (examples > 0)
+//            foldParser = new FoldParser(parser, k, splitPolicy, 0, false, examples);
+//        else
+//            foldParser = new FoldParser(parser, k, splitPolicy, 0, false);
+//        parser = foldParser;
+//
+//        if (splitPolicy == FoldParser.SplitPolicy.manual)
+//            k = foldParser.getK();
+//
+//        final double[][] performances = new double[rounds.length][k];
+//        Lexicon labelLexicon = learner.getLabelLexicon();
+//
+//        // Train and get testing performances for each fold.
+//        for (int i = 0; i < k; foldParser.setPivot(++i)) {
+//            if (statusMessages || progressOutput > 0)
+//                System.out.println("  " + learner.name + ": " + messageIndent
+//                        + "Training against subset " + i + " at " + new Date());
+//            final int fold = i;
+//            messageIndent += "  ";
+//
+//            train(totalRounds, new DoneWithRound() {
+//                int r = 0;
+//
+//                public void doneWithRound(int round) {
+//                    if (round < totalRounds && rounds[r] == round)
+//                        performances[r++][fold] =
+//                                crossValidationTesting(foldParser, metric, true, false);
+//                }
+//            });
+//
+//            performances[rounds.length - 1][i] =
+//                    crossValidationTesting(foldParser, metric, false, statusMessages);
+//            messageIndent = messageIndent.substring(2);
+//
+//            learner.forget();
+//            if (labelLexicon != null && labelLexicon.size() > 0
+//                    && learner.getLabelLexicon().size() == 0)
+//                learner.setLabelLexicon(labelLexicon);
+//        }
+//
+//        parser = foldParser.getParser();
+//
+//        // Compute the confidence interval.
+//        double[][] results = new double[rounds.length][];
+//        boolean usingAccuracy = metric instanceof Accuracy;
+//
+//        for (int r = 0; r < rounds.length; ++r) {
+//            results[r] = StudentT.confidenceInterval(performances[r], alpha);
+//
+//            if (r == rounds.length - 1 && statusMessages || progressOutput > 0) {
+//                double mean = Math.round(results[r][0] * 100000) / 100000.0;
+//                double half = Math.round(results[r][1] * 100000) / 100000.0;
+//
+//                System.out.print("  " + learner.name + ":   " + messageIndent + (100 * (1 - alpha))
+//                        + "% confidence interval after " + rounds[r] + " rounds: " + mean);
+//                if (usingAccuracy)
+//                    System.out.print("%");
+//                System.out.print(" +/- " + half);
+//                if (usingAccuracy)
+//                    System.out.print("%");
+//                System.out.println();
+//            }
+//        }
+//
+//        return results;
+//    }
 
 
     /**
@@ -1109,83 +820,83 @@ public class BatchTrainer {
      * @return The element of <code>parameters</code> that resulted in the best performance
      *         according to <code>metric</code>.
      **/
-    public Learner.Parameters tune(Learner.Parameters[] parameters, int[] rounds, int k,
-                                   FoldParser.SplitPolicy splitPolicy, double alpha, TestingMetric metric) {
-        int best = -1;
-        String[] parameterStrings = new String[parameters.length];
-        double[][] scores = new double[parameters.length][];
-
-        for (int i = 0; i < parameters.length; ++i) {
-            parameterStrings[i] = parameters[i].nonDefaultString();
-
-            // Status message.
-            if (progressOutput > 0)
-                System.out.println("  " + learner.name + ": " + messageIndent
-                        + "Trying parameters (" + parameterStrings[i] + ")");
-
-            learner.setParameters(parameters[i]);
-            messageIndent += "  ";
-            double[][] results = crossValidation(rounds, k, splitPolicy, alpha, metric, false);
-            messageIndent = messageIndent.substring(2);
-
-            // Update best scores, rounds, and parameters.
-            int bestRounds = 0;
-            if (best == -1 || results[0][0] > scores[best][0])
-                best = i;
-            scores[i] = results[0];
-
-            for (int j = 1; j < results.length; ++j)
-                if (results[j][0] > scores[i][0]) {
-                    bestRounds = j;
-                    scores[i] = results[j];
-                    if (results[j][0] > scores[best][0])
-                        best = i;
-                }
-
-            parameters[i].rounds = rounds[bestRounds];
-        }
-
-        if (progressOutput > 0) {
-            // Print a table of results.
-            double[][] data = new double[parameters.length][4];
-            for (int i = 0; i < parameters.length; ++i) {
-                data[i][0] = i + 1;
-                data[i][1] = scores[i][0];
-                data[i][2] = scores[i][1];
-                data[i][3] = parameters[i].rounds;
-            }
-
-            String[] columnLabels = {"Set", metric.getName(), "+/-", "Rounds"};
-            int[] sigDigits = {0, 3, 3, 0};
-            String[] s =
-                    TableFormat.tableFormat(columnLabels, null, data, sigDigits, new int[] {0});
-
-            System.out.println("  " + learner.name + ": " + messageIndent + "----");
-            System.out.println("  " + learner.name + ": " + messageIndent + "Parameter sets:");
-            for (int i = 0; i < parameterStrings.length; ++i)
-                System.out.println("  " + learner.name + ": " + messageIndent + (i + 1) + ": "
-                        + parameterStrings[i]);
-            for (int i = 0; i < s.length; ++i)
-                System.out.println("  " + learner.name + ": " + messageIndent + s[i]);
-            System.out.println("  " + learner.name + ": " + messageIndent + "----");
-
-            // Status message.
-            double bestScore = Math.round(scores[best][0] * 100000) / 100000.0;
-            System.out.println("  " + learner.name + ": " + messageIndent + "Best "
-                    + metric.getName() + ": " + bestScore);
-            System.out.print("  " + learner.name + ":   " + messageIndent + "with ");
-
-            if (parameterStrings[best].length() > 0) {
-                System.out.println(parameterStrings[best]);
-                System.out.print("  " + learner.name + ":   " + messageIndent + "and ");
-            }
-
-            System.out.println(parameters[best].rounds + " rounds");
-        }
-
-        learner.setParameters(parameters[best]);
-        return parameters[best];
-    }
+//    public Learner.Parameters tune(Learner.Parameters[] parameters, int[] rounds, int k,
+//                                   FoldParser.SplitPolicy splitPolicy, double alpha, TestingMetric metric) {
+//        int best = -1;
+//        String[] parameterStrings = new String[parameters.length];
+//        double[][] scores = new double[parameters.length][];
+//
+//        for (int i = 0; i < parameters.length; ++i) {
+//            parameterStrings[i] = parameters[i].nonDefaultString();
+//
+//            // Status message.
+//            if (progressOutput > 0)
+//                System.out.println("  " + learner.name + ": " + messageIndent
+//                        + "Trying parameters (" + parameterStrings[i] + ")");
+//
+//            learner.setParameters(parameters[i]);
+//            messageIndent += "  ";
+//            double[][] results = crossValidation(rounds, k, splitPolicy, alpha, metric, false);
+//            messageIndent = messageIndent.substring(2);
+//
+//            // Update best scores, rounds, and parameters.
+//            int bestRounds = 0;
+//            if (best == -1 || results[0][0] > scores[best][0])
+//                best = i;
+//            scores[i] = results[0];
+//
+//            for (int j = 1; j < results.length; ++j)
+//                if (results[j][0] > scores[i][0]) {
+//                    bestRounds = j;
+//                    scores[i] = results[j];
+//                    if (results[j][0] > scores[best][0])
+//                        best = i;
+//                }
+//
+//            parameters[i].rounds = rounds[bestRounds];
+//        }
+//
+//        if (progressOutput > 0) {
+//            // Print a table of results.
+//            double[][] data = new double[parameters.length][4];
+//            for (int i = 0; i < parameters.length; ++i) {
+//                data[i][0] = i + 1;
+//                data[i][1] = scores[i][0];
+//                data[i][2] = scores[i][1];
+//                data[i][3] = parameters[i].rounds;
+//            }
+//
+//            String[] columnLabels = {"Set", metric.getName(), "+/-", "Rounds"};
+//            int[] sigDigits = {0, 3, 3, 0};
+//            String[] s =
+//                    TableFormat.tableFormat(columnLabels, null, data, sigDigits, new int[] {0});
+//
+//            System.out.println("  " + learner.name + ": " + messageIndent + "----");
+//            System.out.println("  " + learner.name + ": " + messageIndent + "Parameter sets:");
+//            for (int i = 0; i < parameterStrings.length; ++i)
+//                System.out.println("  " + learner.name + ": " + messageIndent + (i + 1) + ": "
+//                        + parameterStrings[i]);
+//            for (int i = 0; i < s.length; ++i)
+//                System.out.println("  " + learner.name + ": " + messageIndent + s[i]);
+//            System.out.println("  " + learner.name + ": " + messageIndent + "----");
+//
+//            // Status message.
+//            double bestScore = Math.round(scores[best][0] * 100000) / 100000.0;
+//            System.out.println("  " + learner.name + ": " + messageIndent + "Best "
+//                    + metric.getName() + ": " + bestScore);
+//            System.out.print("  " + learner.name + ":   " + messageIndent + "with ");
+//
+//            if (parameterStrings[best].length() > 0) {
+//                System.out.println(parameterStrings[best]);
+//                System.out.print("  " + learner.name + ":   " + messageIndent + "and ");
+//            }
+//
+//            System.out.println(parameters[best].rounds + " rounds");
+//        }
+//
+//        learner.setParameters(parameters[best]);
+//        return parameters[best];
+//    }
 
 
     /**
