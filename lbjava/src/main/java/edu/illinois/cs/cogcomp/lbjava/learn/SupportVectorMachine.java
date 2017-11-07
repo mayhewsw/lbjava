@@ -452,6 +452,10 @@ public class SupportVectorMachine extends Learner {
         allExamples = new OVector(ne);
     }
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels,labelValues);
+    }
 
     /**
      * This method adds the example's features and labels to the arrays storing the training

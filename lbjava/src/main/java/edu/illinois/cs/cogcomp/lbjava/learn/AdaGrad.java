@@ -160,6 +160,12 @@ public class AdaGrad extends Learner {
         return learningRateA;
     }
 
+
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * AdaGrad's Learning Function: Each row of feature vector + label feed in as arguments; Update
      * internal parameters;

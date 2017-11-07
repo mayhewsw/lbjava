@@ -232,6 +232,11 @@ public class MuxLearner extends Learner {
     }
 
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * The training example is multiplexed to the appropriate <code>Learner</code>(s).
      *

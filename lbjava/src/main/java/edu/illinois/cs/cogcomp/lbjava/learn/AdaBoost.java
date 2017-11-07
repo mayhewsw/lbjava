@@ -239,6 +239,12 @@ public class AdaBoost extends Learner {
     }
 
 
+
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * This method adds the example object to the array storing the training examples.
      *

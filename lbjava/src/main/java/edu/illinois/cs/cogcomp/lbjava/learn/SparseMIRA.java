@@ -142,6 +142,11 @@ public class SparseMIRA extends Learner {
     }
 
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * Finds the optimal multiplier settings before updating the weight vectors.
      *

@@ -179,6 +179,11 @@ public class StochasticGradientDescent extends Learner {
     }
 
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * Trains the learning algorithm given an object as an example.
      *

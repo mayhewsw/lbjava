@@ -308,6 +308,11 @@ public class WekaWrapper extends Learner {
     }
 
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
+
     /**
      * Since WEKA classifiers cannot learn online, this method causes no actual learning to occur,
      * it simply creates an <code>Instance</code> object from this example and adds it to a set of

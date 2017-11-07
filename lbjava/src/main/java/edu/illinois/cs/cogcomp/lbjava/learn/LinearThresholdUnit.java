@@ -497,6 +497,10 @@ public abstract class LinearThresholdUnit extends Learner {
         return allowableValues;
     }
 
+    public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
+                      double[] labelValues, double weight) {
+        learn(exampleFeatures, exampleValues, exampleLabels, labelValues);
+    }
 
     /**
      * The default training algorithm for a linear threshold unit consists of evaluating the example
@@ -514,7 +518,7 @@ public abstract class LinearThresholdUnit extends Learner {
      * @param labelValues The labels' values
      **/
     public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues) {
+                      double[] labelValues) {
         assert exampleLabels.length == 1 : "Example must have a single label.";
         assert exampleLabels[0] == 0 || exampleLabels[0] == 1 : "Example has unallowed label value.";
 
