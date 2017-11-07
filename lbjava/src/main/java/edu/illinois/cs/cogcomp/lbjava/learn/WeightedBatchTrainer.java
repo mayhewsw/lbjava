@@ -49,7 +49,7 @@ public class WeightedBatchTrainer {
     public static void writeExample(ExceptionlessOutputStream out, int[] featureIndexes,
                                     double[] featureValues, int[] labelIndexes, double[] labelValues) {
         writeExample(out, featureIndexes, featureValues, labelIndexes, labelValues,
-                featureIndexes.length, null);
+                featureIndexes.length, null, 1.0);
     }
 
 
@@ -67,7 +67,7 @@ public class WeightedBatchTrainer {
      **/
     public static void writeExample(ExceptionlessOutputStream out, int[] featureIndexes,
                                     double[] featureValues, int[] labelIndexes, double[] labelValues, int unpruned) {
-        writeExample(out, featureIndexes, featureValues, labelIndexes, labelValues, unpruned, null);
+        writeExample(out, featureIndexes, featureValues, labelIndexes, labelValues, unpruned, null,1.0);
     }
 
 
@@ -85,9 +85,9 @@ public class WeightedBatchTrainer {
      * @param lex A lexicon.
      **/
     public static void writeExample(ExceptionlessOutputStream out, int[] featureIndexes,
-                                    double[] featureValues, int[] labelIndexes, double[] labelValues, Lexicon lex) {
+                                    double[] featureValues, int[] labelIndexes, double[] labelValues, Lexicon lex, double weight) {
         writeExample(out, featureIndexes, featureValues, labelIndexes, labelValues,
-                featureIndexes.length, lex);
+                featureIndexes.length, lex, weight);
     }
 
 
@@ -107,7 +107,7 @@ public class WeightedBatchTrainer {
      **/
     public static void writeExample(ExceptionlessOutputStream out, final int[] featureIndexes,
                                     double[] featureValues, int[] labelIndexes, double[] labelValues, int unpruned,
-                                    final Lexicon lexicon) {
+                                    final Lexicon lexicon, double weight) {
         int[] I = null;
         if (lexicon != null) {
             I = new int[featureIndexes.length];
@@ -141,6 +141,9 @@ public class WeightedBatchTrainer {
                 out.writeDouble(featureValues[I[i]]);
             }
         }
+
+        out.writeDouble(weight);
+
     }
 
 
@@ -436,8 +439,10 @@ public class WeightedBatchTrainer {
                         lexicon.lookup(lexicon.lookupKey(featureIndexes[i]), true, labelIndex);
                     }
                 }
+                WeightedObject wexample = (WeightedObject) example;
+                double weight = wexample.getWeight();
 
-                writeExample(eos, featureIndexes, featureValues, labelIndexes, labelValues, lexicon);
+                writeExample(eos, featureIndexes, featureValues, labelIndexes, labelValues, lexicon, weight);
             }
         }
 
@@ -467,9 +472,9 @@ public class WeightedBatchTrainer {
 
         // Set up a new parser to read the pre-extracted examples.
         if (fTempFile != null)
-            parser = new ArrayFileParser(fTempFile.getPath(), zip);
+            parser = new WeightedArrayFileParser(fTempFile.getPath(), zip);
         else
-            parser = new ArrayFileParser(baos.toByteArray(), zip);
+            parser = new WeightedArrayFileParser(baos.toByteArray(), zip);
 
         learner.setLabelLexicon(preExtractLearner.getLabelLexicon());
         return preExtractLearner;
@@ -576,21 +581,20 @@ public class WeightedBatchTrainer {
                     System.out.println(examples + " examples processed at " + new Date());
                 }
 
-                // Here we expect that each example has a weight associated with it!
-                // This is a requirement of the parser.
-                // Default weight is just 1.
-                WeightedObject wexample = (WeightedObject) example;
 
-//                // SUUUUUUPER UGLY
-//                if(learner instanceof SparseNetworkLearner){
-//                    SparseNetworkLearner snl = (SparseNetworkLearner) learner;
-//                    LinearThresholdUnit bltu = snl.baseLTU;
-//
-//                    WeightedSparseAveragedPerceptron wsap = (WeightedSparseAveragedPerceptron) bltu;
-//                    wsap.setCurrWeight(wexample.getWeight());
-//                }
 
-                double weight = wexample.getWeight();
+                // this allows us to use the prefetch and WeightedArrayFile
+                double weight;
+                if(example instanceof Object[] && ((Object[]) example).length == 5 ){
+                    Object[] array = (Object[]) example;
+                    weight = (double) array[4];
+                }else {
+                    // Here we expect that each example has a weight associated with it!
+                    // This is a requirement of the parser.
+                    // Default weight is just 1.
+                    WeightedObject wexample = (WeightedObject) example;
+                    weight = wexample.getWeight();
+                }
 
                 learner.learn(example, weight);
                 ++examples;
