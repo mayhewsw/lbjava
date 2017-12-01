@@ -298,6 +298,11 @@ public class WeightedSparseAveragedPerceptron extends SparsePerceptron {
 
         boolean label = (exampleLabels[0] == 1);
 
+        // A zero weight instance should not be operated on.
+        if(weight == 0){
+            return;
+        }
+
         double s = awv.simpleDot(exampleFeatures, exampleValues, initialWeight) + bias;
         if (label && s < threshold + positiveThickness)
             promote(exampleFeatures, exampleValues, weight*getLearningRate());
