@@ -10,7 +10,6 @@ package edu.illinois.cs.cogcomp.lbjava.parse;
 import edu.illinois.cs.cogcomp.core.datastructures.vectors.ExceptionlessInputStream;
 import edu.illinois.cs.cogcomp.lbjava.classify.FeatureVector;
 import edu.illinois.cs.cogcomp.lbjava.learn.Learner;
-import edu.illinois.cs.cogcomp.lbjava.util.WeightedObject;
 
 import java.io.*;
 import java.util.zip.ZipFile;
