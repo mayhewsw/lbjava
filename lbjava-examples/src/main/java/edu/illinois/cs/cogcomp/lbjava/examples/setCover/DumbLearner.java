@@ -23,7 +23,7 @@ public abstract class DumbLearner extends Learner {
     }
 
     public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues) {}
+                      double[] labelValues, double weight) {}
 
     public FeatureVector classify(int[] exampleFeatures, double[] exampleValues) {
         return null;
