@@ -255,7 +255,7 @@ public class NeuralNetLearner extends Learner {
      * @param labelValues The labels' values.
      **/
     public void learn(int[] exampleFeatures, double[] exampleValues, int[] exampleLabels,
-            double[] labelValues) {
+            double[] labelValues, double weight) {
     	this.populateNNVector(exampleFeatures, exampleValues, exampleLabels, labelValues);
 		this.trainer.train(inputs, outputs);
     }
